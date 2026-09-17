@@ -1,203 +1,506 @@
 # Project Report: Inventory Management System
 
-## Abstract
+## 1. Cover Page
 
-This project implements a command-line Inventory Management System using
-core Java. The system allows a user to record products, track stock levels,
-search and update product records, and persist all data to a local text
-file between sessions. It was built using only standard Java libraries
-(collections, I/O, exceptions) to keep the implementation understandable
-for a student learning object-oriented programming, while still covering
-practical software concerns such as input validation and data persistence.
+**Project Title:** Inventory Management System
 
-## Introduction
+**Course:** Programming in Java
 
-Small businesses and individuals often need a simple way to track what
-products they have, how many units are in stock, and what those products
-are worth — without the overhead of a full point-of-sale system or database
-server. This project addresses that need on a small scale, as a learning
-exercise in applying object-oriented design, collections, exception
-handling, and file I/O in Java.
+**Project Type:** Command-Line Core Java Application
 
-## Problem Statement
+**Student Name:** Lakshya Singhal
 
-Manually tracking inventory (e.g. on paper or in an unstructured spreadsheet)
-is error-prone: duplicate entries, forgotten stock updates, and no easy way
-to see which products are running low. The goal is to build a small program
-that structures this data properly, validates input, and prevents common
-mistakes (like selling more stock than is available).
+**Technology Used:** Java
 
-## Objectives
+**Development Approach:** Object-Oriented Programming
 
-1. Represent a product and its attributes as a well-encapsulated Java class.
-2. Provide add, search, update, and delete operations on a collection of products.
-3. Support stock increases (restocking) and decreases (sales), with checks
-   against invalid amounts.
-4. Flag products that have fallen to or below a defined minimum stock level.
-5. Calculate the total monetary value of the current inventory.
-6. Persist the inventory to disk so it survives between program runs.
-7. Handle invalid user input gracefully, without crashing.
+**Data Storage:** Plain Text File
 
-## Existing System
+---
 
-Many students track small inventories using spreadsheet software (e.g.
-Excel/Google Sheets) or plain notebooks. These approaches have no built-in
-validation (a spreadsheet will happily accept a negative quantity), no
-programmatic enforcement of unique IDs, and require manual formulas to
-calculate totals or spot low stock. Larger, real-world systems typically use
-a relational database with a GUI or web front end, which is more capable
-but also considerably more complex to build and explain.
+## 2. Introduction
 
-## Proposed System
+Inventory management means keeping track of products, their prices, available quantities, and stock levels. Managing this information manually can become difficult when the number of products increases.
 
-This project proposes a lightweight, terminal-based alternative built purely
-in Java. It structures inventory data as objects, enforces validation rules
-directly in code, and automates calculations (low-stock detection, total
-value) that would otherwise require manual spreadsheet formulas. It uses
-plain-text file storage rather than a database, which keeps the project
-self-contained (no external server or driver needed) while still providing
-real persistence.
+To solve this problem, I developed an **Inventory Management System using Core Java**. The application works through the command line and allows the user to add, view, search, update, and delete products.
 
-## Functional Requirements
+The system also provides features for adding and removing stock, checking low-stock products, calculating the total value of the inventory, and saving/loading data from a local text file.
 
-- FR1: The system shall allow adding a product with a unique ID, name,
-  category, price, quantity, and minimum stock level.
-- FR2: The system shall display all products currently stored.
-- FR3: The system shall allow searching by product ID or partial product name.
-- FR4: The system shall allow updating a product's name, category, price,
-  and minimum stock level.
-- FR5: The system shall allow deleting a product by ID.
-- FR6: The system shall allow increasing a product's stock quantity.
-- FR7: The system shall allow decreasing a product's stock quantity, and
-  shall reject attempts to remove more than what is available.
-- FR8: The system shall list all products at or below their minimum stock level.
-- FR9: The system shall calculate the total value of all stock (price × quantity, summed).
-- FR10: The system shall save all product data to a file on request.
-- FR11: The system shall load previously saved product data from a file.
-- FR12: The system shall allow the user to exit safely.
+This project helped me apply important Java concepts such as classes and objects, encapsulation, `ArrayList`, exception handling, file handling, constructors, methods, loops, conditional statements, and input validation.
 
-## Non-Functional Requirements
+---
 
-- The system must run entirely from the command line, with no GUI dependency.
-- The system must use only the standard Java library — no third-party frameworks.
-- The system must give clear, human-readable error messages for invalid input.
-- The code must be simple enough for a student to explain line-by-line in a
-  viva/defense setting.
+## 3. Problem Statement
 
-## System Design
+Managing inventory manually using notebooks or simple spreadsheets can cause problems such as duplicate product entries, incorrect stock quantities, forgotten updates, and difficulty in finding products that are running low.
 
-The system follows a simple layered structure, separating data, logic, I/O,
-and user interaction into four classes plus one custom exception:
+The main aim of this project is to develop a simple Java-based system that can store product information, manage stock, validate user input, identify low-stock products, calculate inventory value, and save data for future use.
 
-- **Product** — the data layer. Stores one product's attributes and enforces
-  validation on them directly (encapsulation).
-- **Inventory** — the logic layer. Owns the `ArrayList<Product>` and
-  implements every operation (add, search, update, delete, stock changes,
-  low-stock check, total value). Does not know about the console or files.
-- **FileManager** — the persistence layer. Converts the product list to and
-  from lines of text in `data/products.txt`. Does not know about validation
-  rules or the menu.
-- **Main** — the presentation layer. Displays the menu, reads console input
-  with `Scanner`, converts raw text into calls on `Inventory`/`FileManager`,
-  and catches exceptions to show friendly error messages.
-- **DuplicateProductException** — a custom checked exception used specifically
-  when `Inventory.addProduct()` detects a duplicate ID.
+The system is designed to provide these functions through an easy-to-use command-line interface.
 
-This layering means each class can be understood, tested, and explained in
-isolation, and a change to one layer (e.g. switching file storage for a
-database) would not require rewriting the others.
+---
 
-## Class Descriptions
+## 4. Functional Requirements
 
-**Product**: Holds `id`, `name`, `category`, `price`, `quantity`, and
-`minStockLevel`. The constructor and all setters validate their inputs
-(non-empty name/ID, non-negative price/quantity/minStockLevel), so an
-invalid `Product` object can never exist in memory. Provides
-`getStockValue()`, `isLowStock()`, and conversion methods `toFileLine()` /
-`fromFileLine()` for persistence.
+The system provides the following functions:
 
-**Inventory**: Holds the `List<Product>` and implements every business
-operation described in the functional requirements. Uses a linear search
-(`findById`) since the expected data size for a course project is small;
-this keeps the logic easy to read and explain without needing a `HashMap`.
+### FR1: Add Product
 
-**FileManager**: Wraps `FileWriter`/`BufferedReader` to save and load the
-product list as plain comma-separated text, one product per line. If the
-file does not exist yet, `load()` returns an empty list instead of throwing
-an error, so the very first run of the program works without any setup.
+The user can add a new product by entering its ID, name, category, price, quantity, and minimum stock level. Product IDs must be unique.
 
-**Main**: Contains the `main()` method, the menu-printing logic, and one
-private helper method per menu option. Uses a `while` loop with a `switch`
-statement to keep dispatching simple and readable. Wraps risky calls in
-`try/catch` blocks to turn exceptions into user-friendly messages.
+### FR2: Display Products
 
-**DuplicateProductException**: A minimal custom `Exception` subclass with
-just a constructor that passes its message to the parent class. Demonstrates
-that a program can define exceptions specific to its own business rules,
-not just rely on built-in ones.
+The system can display all products currently available in the inventory.
 
-## Algorithm / Working
+### FR3: Search Product
 
-1. On startup, `Main` creates an empty `Inventory` and attempts to load any
-   existing data via `FileManager.load()`.
-2. The program enters a loop: print the menu, read the user's choice as a
-   string, and use a `switch` statement to call the matching private method.
-3. Each menu method reads any further input it needs (e.g. product ID, new
-   quantity) and delegates the actual work to a method on `Inventory`.
-4. `Inventory` methods perform the requested operation on the internal
-   `ArrayList<Product>`, throwing an exception if the request is invalid
-   (duplicate ID, product not found, insufficient stock, negative numbers).
-5. `Main` catches any thrown exception at the top level of the loop and
-   prints its message, then loops back to show the menu again — so one bad
-   input never crashes the whole program.
-6. Saving/loading (`FileManager`) is only triggered when the user explicitly
-   chooses options 10 or 11, so the user has full control over when disk
-   I/O happens.
+The user can search for a product using its ID or by entering part of the product name.
 
-## OOP Concepts Used
+### FR4: Update Product
 
-- **Encapsulation**: `Product`'s fields are private, and every mutation goes
-  through a validating setter or the constructor.
-- **Classes and objects**: Each `Product` is an independent object with its
-  own state; `Inventory` is a class managing a collection of them.
-- **Constructors**: `Product`'s constructor enforces all validation rules
-  at creation time.
-- **Methods**: Each class exposes a small, purpose-specific set of public
-  methods (e.g. `addStock`, `removeStock`, `getTotalInventoryValue`).
-- **Collections**: `ArrayList<Product>` stores the inventory in `Inventory`.
-- **Exception handling**: Built-in exceptions (`IllegalArgumentException`,
-  `NumberFormatException`, `IOException`) and one custom exception
-  (`DuplicateProductException`) are used and caught at appropriate layers.
-- **File handling**: `FileWriter` and `BufferedReader`/`FileReader` handle
-  saving and loading data in `FileManager`.
+The user can update the name, category, price, and minimum stock level of an existing product.
 
-## File Handling
+### FR5: Delete Product
 
-Data is stored as plain comma-separated text in `data/products.txt`, one
-product per line, in the format:
+The user can delete an existing product by entering its product ID.
 
+### FR6: Add Stock
+
+The system allows the user to increase the quantity of an existing product.
+
+### FR7: Remove Stock
+
+The system allows the user to decrease product quantity. It does not allow the user to remove more stock than the available quantity.
+
+### FR8: Low-Stock Detection
+
+The system identifies products whose quantity is equal to or below their minimum stock level.
+
+### FR9: Calculate Inventory Value
+
+The system calculates the total value of all products using:
+
+**Total Inventory Value = Σ (Price × Quantity)**
+
+### FR10: Save Data
+
+The user can save the current inventory data to a local text file.
+
+### FR11: Load Data
+
+Previously saved product data can be loaded from the local file.
+
+### FR12: Exit
+
+The user can exit the application safely using the exit option.
+
+---
+
+## 5. Non-Functional Requirements
+
+### 5.1 Usability
+
+The application uses a simple menu-driven command-line interface so that the user can easily understand and use the available options.
+
+### 5.2 Reliability
+
+The system checks user input and handles invalid operations without stopping the complete application.
+
+### 5.3 Performance
+
+The system performs the inventory operations efficiently for the small amount of data expected in this project.
+
+### 5.4 Maintainability
+
+The program is divided into different classes, with each class having a specific responsibility. This makes the code easier to understand and modify.
+
+### 5.5 Error Handling
+
+The application displays clear error messages for invalid input, duplicate product IDs, products that do not exist, insufficient stock, and file-related errors.
+
+### 5.6 Resource Efficiency
+
+The project uses standard Java libraries and a simple text file for storage, so it does not require an external database or server.
+
+---
+
+## 6. System Architecture
+
+The project uses a simple layered structure. Different responsibilities are handled by different classes.
+
+```text
++-----------------------------+
+|          Main.java          |
+|     Presentation Layer      |
+|      Menu + User Input      |
++-------------+---------------+
+              |
+              v
++-----------------------------+
+|        Inventory.java        |
+|        Logic Layer           |
+| Add/Search/Update/Delete     |
+| Stock Management + Reports   |
++-------------+---------------+
+              |
+              v
++-----------------------------+
+|         Product.java         |
+|         Data Layer           |
+| Product Information          |
+| Validation + Calculations    |
++-------------+---------------+
+              |
+              v
++-----------------------------+
+|       FileManager.java       |
+|      Persistence Layer       |
+|        Save / Load           |
++-------------+---------------+
+              |
+              v
++-----------------------------+
+|      data/products.txt       |
+|         File Storage         |
++-----------------------------+
 ```
+
+### Main Components
+
+**Main.java:**
+Handles the menu, takes input from the user, and displays the output.
+
+**Inventory.java:**
+Handles the main inventory operations such as adding, searching, updating, deleting, and managing stock.
+
+**Product.java:**
+Represents an individual product and stores its ID, name, category, price, quantity, and minimum stock level.
+
+**FileManager.java:**
+Handles saving and loading product data from the text file.
+
+**DuplicateProductException.java:**
+A custom exception used when a product with an already existing ID is added.
+
+---
+
+## 7. Design Diagrams
+
+### 7.1 Use Case Diagram
+
+```text
+                  +----------------------------+
+                  | Inventory Management       |
+                  | System                     |
+                  |                            |
+User -----------> | Add Product                |
+User -----------> | View Products              |
+User -----------> | Search Product             |
+User -----------> | Update Product             |
+User -----------> | Delete Product             |
+User -----------> | Add Stock                  |
+User -----------> | Remove Stock               |
+User -----------> | Check Low Stock            |
+User -----------> | Calculate Inventory Value  |
+User -----------> | Save Data                  |
+User -----------> | Load Data                  |
+User -----------> | Exit System                |
+                  +----------------------------+
+```
+
+The user interacts with the application through the command-line menu and can select the required inventory operation.
+
+---
+
+### 7.2 Workflow Diagram
+
+```text
+              START
+                |
+                v
+       Create Inventory
+                |
+                v
+        Load Existing Data
+                |
+                v
+          Display Menu
+                |
+                v
+        Read User Choice
+                |
+                v
+       Perform Operation
+                |
+                v
+        Validate Operation
+           /          \
+        Valid        Invalid
+          |             |
+          v             v
+      Show Result    Show Error
+          |             |
+          +------+------+
+                 |
+                 v
+            Show Menu
+                 |
+                 v
+           Exit Selected?
+             /       \
+           No         Yes
+           |           |
+           +----->     v
+                     END
+```
+
+---
+
+### 7.3 Sequence Diagram
+
+```text
+User        Main        Inventory       Product       FileManager
+ |            |             |              |              |
+ |--Add------>|             |              |              |
+ |            |--addProduct>|              |              |
+ |            |             |--create----->|              |
+ |            |             |              |              |
+ |            |<------------|              |              |
+ |<--Success--|             |              |              |
+ |            |             |              |              |
+ |--Save----->|             |              |              |
+ |            |----------------------------------------->|
+ |            |             |              |              |
+ |<--Saved----|             |              |              |
+```
+
+---
+
+### 7.4 Class Diagram
+
+```text
++--------------------------------+
+|            Product             |
++--------------------------------+
+| - id: String                   |
+| - name: String                 |
+| - category: String             |
+| - price: double                |
+| - quantity: int                |
+| - minStockLevel: int           |
++--------------------------------+
+| + getStockValue()              |
+| + isLowStock()                 |
+| + toFileLine()                 |
+| + fromFileLine()               |
++--------------------------------+
+               |
+               |
+               v
++--------------------------------+
+|           Inventory            |
++--------------------------------+
+| - products: List<Product>      |
++--------------------------------+
+| + addProduct()                 |
+| + searchProduct()              |
+| + updateProduct()              |
+| + deleteProduct()              |
+| + addStock()                   |
+| + removeStock()                |
+| + getLowStockProducts()        |
+| + getTotalInventoryValue()     |
++--------------------------------+
+
++--------------------------------+
+|          FileManager           |
++--------------------------------+
+| + save()                       |
+| + load()                       |
++--------------------------------+
+
++--------------------------------+
+|             Main               |
++--------------------------------+
+| + main()                       |
+| + menu methods                 |
++--------------------------------+
+
++--------------------------------+
+|    DuplicateProductException   |
++--------------------------------+
+| Custom Exception               |
++--------------------------------+
+```
+
+---
+
+### 7.5 ER / Storage Design
+
+This project does not use a relational database. Product information is stored in a plain text file.
+
+**Storage File:**
+
+```text
+data/products.txt
+```
+
+**Record Format:**
+
+```text
 id,name,category,price,quantity,minStockLevel
 ```
 
-`FileManager.save()` overwrites the file with the current in-memory product
-list. `FileManager.load()` reads the file line by line, skipping and
-warning about any line that fails to parse (rather than crashing), so a
-manually corrupted file degrades gracefully instead of stopping the program.
+Example:
 
-## Testing
-
-See `TESTING.md` for the full table of test cases. All 17 listed tests were
-actually executed against the compiled program (not merely predicted), using
-piped console input to simulate a user typing at each menu prompt, and every
-one passed. No results in that document were fabricated or assumed.
-
-## Sample Outputs
-
-Below is real terminal output, taken from an actual run of the compiled
-program:
-
+```text
+P1,Rice Bag 5kg,Grocery,50,100,20
 ```
+
+Each line represents one product.
+
+Since the project uses a text file instead of a relational database, a traditional ER diagram is not applicable.
+
+---
+
+## 8. Design Decisions & Rationale
+
+### 8.1 Using Core Java
+
+The project was developed using Core Java because the submitted course is Programming in Java. This also makes it possible to demonstrate the basic Java concepts learned during the course.
+
+### 8.2 Using Object-Oriented Programming
+
+The project represents each product as an object using the `Product` class. Inventory-related operations are handled by the `Inventory` class. This makes the program more organized and demonstrates OOP concepts.
+
+### 8.3 Using ArrayList
+
+`ArrayList<Product>` is used for storing products. Since this is a small course-level project, `ArrayList` is sufficient and keeps the implementation simple.
+
+### 8.4 Separating Classes
+
+Different responsibilities are divided among different classes instead of putting all the code in `Main.java`. This makes the project easier to understand, test, and modify.
+
+### 8.5 Using Text File Storage
+
+A text file is used to save the inventory instead of a database. This keeps the application simple and also demonstrates Java file handling.
+
+### 8.6 Using a Custom Exception
+
+`DuplicateProductException` was created to handle duplicate product IDs. This demonstrates how custom exceptions can be created for specific application requirements.
+
+### 8.7 Input Validation
+
+Input validation is used to prevent invalid product information such as negative prices, negative quantities, empty IDs, or invalid stock operations.
+
+---
+
+## 9. Implementation Details
+
+The project contains five main Java classes.
+
+### 9.1 Product.java
+
+The `Product` class represents one product in the inventory.
+
+It stores:
+
+* Product ID
+* Product name
+* Category
+* Price
+* Quantity
+* Minimum stock level
+
+The fields are private and are accessed through methods. Validation is performed when product data is created or changed.
+
+The class also provides methods for calculating stock value and checking low-stock status.
+
+---
+
+### 9.2 Inventory.java
+
+The `Inventory` class manages all products using an `ArrayList<Product>`.
+
+It performs operations such as:
+
+* Adding products
+* Searching products
+* Updating products
+* Deleting products
+* Adding stock
+* Removing stock
+* Finding low-stock products
+* Calculating total inventory value
+
+A linear search is used for finding products by ID because the expected number of products in this project is small.
+
+---
+
+### 9.3 FileManager.java
+
+The `FileManager` class is responsible for storing and retrieving data.
+
+It uses Java file handling classes such as:
+
+* `FileWriter`
+* `FileReader`
+* `BufferedReader`
+
+The product data is stored in:
+
+```text
+data/products.txt
+```
+
+The file contains one product record per line.
+
+---
+
+### 9.4 Main.java
+
+The `Main` class contains the `main()` method and handles the command-line interface.
+
+It displays the menu, takes input using `Scanner`, and calls the required methods.
+
+A loop is used to keep the application running until the user selects the exit option.
+
+A `switch` statement is used to process menu choices, while `try-catch` blocks are used for handling errors.
+
+---
+
+### 9.5 DuplicateProductException.java
+
+This class is a custom exception created for duplicate product IDs.
+
+When a user tries to add a product with an ID that already exists, the exception is generated and an appropriate message is shown.
+
+---
+
+### 9.6 Program Working
+
+The basic working of the application is:
+
+1. The program starts and creates an inventory object.
+2. Existing data can be loaded from the text file.
+3. The main menu is displayed.
+4. The user selects an operation.
+5. The required information is entered.
+6. The corresponding inventory operation is performed.
+7. Invalid input or operations are handled using validation and exceptions.
+8. The result is displayed to the user.
+9. The menu is displayed again.
+10. The user can save the data or exit the application.
+
+---
+
+## 10. Screenshots / Results
+
+The application produces different command-line results for different operations.
+
+### Example: Adding a Product
+
+```text
 Enter your choice: 1
 Product ID: P1
 Product name: Rice Bag 5kg
@@ -205,45 +508,167 @@ Category: Grocery
 Price: 50
 Quantity: 100
 Minimum stock level: 20
-Product added successfully.
 
+Product added successfully.
+```
+
+### Example: Calculating Inventory Value
+
+```text
 Enter your choice: 9
+
 Total inventory value: $5000.00
 ```
 
-## Limitations
+The application also produces results for:
 
-- Plain-text storage has no encryption and only basic protection against
-  corrupted data (corrupted lines are skipped, not repaired).
-- No concurrency or multi-user support — designed for a single user in a
-  single terminal session.
-- No sorting/filtering beyond search and the low-stock view.
-- Linear search (`O(n)`) is used for lookups, which is appropriate for a
-  small course-project dataset but would not scale to a very large catalog.
+* Searching products
+* Updating products
+* Deleting products
+* Adding stock
+* Removing stock
+* Checking low-stock products
+* Saving data
+* Loading data
+* Handling invalid input
 
-## Future Scope
+Actual screenshots can be added to the final PDF as supporting evidence if required or desired.
 
-- Replace linear search with a `HashMap<String, Product>` keyed by ID for
-  faster lookups at larger scale.
-- Add CSV import/export for interoperability with spreadsheet tools.
-- Introduce a transaction/audit log recording every stock change with a timestamp.
-- Migrate storage to a lightweight embedded database (e.g. SQLite via JDBC)
-  as a follow-up learning exercise.
-- Add a JUnit test suite to automate the manual tests currently documented
-  in `TESTING.md`.
+---
+
+## 11. Testing Approach
+
+Testing was performed by running the compiled Java application and checking whether the output matched the expected result.
+
+A total of **17 test cases** were documented in `TESTING.md`.
+
+The following operations were tested:
+
+1. Adding a valid product
+2. Detecting a duplicate product ID
+3. Rejecting an invalid price
+4. Rejecting an invalid quantity
+5. Searching an existing product by ID
+6. Searching using a partial product name
+7. Handling a product that does not exist
+8. Updating a product
+9. Deleting an existing product
+10. Handling deletion of a missing product
+11. Adding stock
+12. Removing stock
+13. Rejecting removal of insufficient stock
+14. Detecting low-stock products
+15. Calculating total inventory value
+16. Saving inventory data
+17. Loading inventory data in a separate run
+
+All 17 documented test cases were executed against the compiled program and passed.
+
+---
+
+## 12. Challenges Faced
+
+During the development of the project, I faced several challenges.
+
+### 12.1 Input Validation
+
+One challenge was making sure that invalid values such as negative prices or quantities were not accepted. Validation was added to handle these cases.
+
+### 12.2 Duplicate Product IDs
+
+Every product needs a unique ID. To handle duplicate IDs properly, a custom `DuplicateProductException` was created.
+
+### 12.3 Stock Management
+
+The system needed to make sure that the user could not remove more stock than was available. A check was added before decreasing the quantity.
+
+### 12.4 File Handling
+
+Another challenge was saving and loading product data between different program runs. Java file I/O classes were used to implement this functionality.
+
+### 12.5 Handling Errors
+
+The application should not close whenever the user enters invalid information. Exception handling was used so that an error message is displayed and the user can continue using the program.
+
+### 12.6 Keeping the Code Simple
+
+Since this project is for a Java course, the code needed to be easy to understand and explain. Therefore, the functionality was divided into separate classes with clear responsibilities.
+
+---
+
+## 13. Learnings & Key Takeaways
+
+This project helped me understand and apply several important Java concepts.
+
+### 13.1 Object-Oriented Programming
+
+I learned how classes and objects can be used to represent real-world entities such as products and inventory.
+
+### 13.2 Encapsulation
+
+I learned how private fields and controlled methods can be used to protect data and perform validation.
+
+### 13.3 Collections
+
+Using `ArrayList<Product>` gave me practical experience in storing and managing multiple objects dynamically.
+
+### 13.4 Exception Handling
+
+I learned how built-in exceptions and custom exceptions can be used to handle errors without stopping the complete application.
+
+### 13.5 File Handling
+
+The project helped me understand how Java can read and write data using file handling classes.
+
+### 13.6 Modular Programming
+
+Dividing the project into different classes made the code easier to understand and maintain.
+
+### 13.7 Input Validation
+
+I learned that validating user input is important for preventing incorrect data and maintaining the correct state of the application.
+
+### 13.8 Practical Application of Java
+
+Overall, the project helped me connect the Java concepts studied in the course with a practical problem.
+
+---
+
+## 14. Future Enhancements
+
+The project can be improved further in the future.
+
+1. A graphical user interface can be added to make the application easier to use.
+2. A database can be used instead of a text file for storing larger amounts of data.
+3. `HashMap<String, Product>` can be used for faster product ID searching.
+4. CSV import and export can be added for easier data transfer.
+5. A transaction or audit log can be added to record stock changes.
+6. User login and different user roles can be introduced.
+7. Sorting and advanced filtering options can be added.
+8. JUnit tests can be added for automated testing.
+9. More detailed inventory reports can be added.
+10. The project can later be extended into a web-based inventory management application.
+
+---
+
+## 15. References
+
+1. Oracle, **The Java Tutorials**
+   https://docs.oracle.com/javase/tutorial/
+
+2. Oracle, **Java SE Documentation**
+   https://docs.oracle.com/en/java/javase/
+
+3. Java Standard Library documentation for `ArrayList`, `Scanner`, `FileWriter`, `FileReader`, `BufferedReader`, exception handling, classes, objects, and file I/O.
+
+---
 
 ## Conclusion
 
-This project demonstrates a complete, working command-line inventory system
-built from fundamental Java concepts: encapsulated classes, a collection-based
-data layer, validated input, custom and built-in exception handling, and
-file-based persistence. Each class has a single, clear responsibility, which
-keeps the code readable and defensible in an academic setting while still
-solving a genuine small-scale inventory-tracking problem.
+The Inventory Management System is a command-line application developed using Core Java and object-oriented programming concepts.
 
-## References
+The system provides features such as product management, stock management, low-stock detection, inventory value calculation, input validation, exception handling, and file-based data storage.
 
-- Oracle, "The Java Tutorials" — https://docs.oracle.com/javase/tutorial/
-- Oracle, "Java SE Documentation" — https://docs.oracle.com/en/java/javase/
-  (used for standard reference on `ArrayList`, `Scanner`, `FileWriter`,
-  `BufferedReader`, and exception handling syntax)
+The project helped me apply important Programming in Java concepts in a practical application. The code is divided into separate classes, which makes it easier to understand, test, and maintain.
+
+Overall, the project provides a simple solution for small-scale inventory management while demonstrating the practical use of Java programming concepts.
